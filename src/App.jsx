@@ -1,7 +1,6 @@
 import Header from "./components/Header"
 import Guitar from './components/Guitar';
-import { useEffect, useState } from "react";
-import {db} from './data/db'
+import { useCart } from "./hooks/useCart";
 
 function App() {
     // no se puede tener dentro de una condicional un hook
@@ -11,77 +10,10 @@ function App() {
 
     // el state de react es asincrono
 
-    const initialCart = () => {
-        const localStorageCart = localStorage.getItem('cart')
-        return localStorageCart ? JSON.parse(localStorageCart): []
-    }
-
-    const [data] = useState(db)
-    const [cart , setCart]  = useState(initialCart)
-
-    const MAX_ITEMS = 5
-    const MIN_ITEMS = 1
-
-    /*  de esta forma se arregla el problema de tener un 
-        el state de react asincrono con la funcion de guardar datos en el localstorage
-
-        ademas de que el uso de useeeffect actualiza el lcoalstorage cada vez que cambia cart :D
-    */
-    useEffect(() => {
-        localStorage.setItem('cart', JSON.stringify(cart))
-    }, [cart])
-
-    function addToCart(item) {
-        const itemExist = cart.findIndex( guitar => guitar.id ===item.id)
-
-        if(itemExist >= 0 ) {
-            // caso cuando ya existe el dato en el carro
-            // codigo que no muta el carro original
-            if(cart[itemExist].quantity >= MAX_ITEMS) return 
-            const updateCart = [...cart]
-            updateCart[itemExist].quantity++
-            setCart(updateCart)
-        }else{
-            item.quantity = 1
-            setCart([...cart,item])
-        }
-    }
-
-    function removeFromCart(id){
-        setCart(prevCart => prevCart.filter(guitar =>guitar.id !== id))
-    }
-
-    function increaseQuantity(id){
-        const updateCart = cart.map( item => {
-            if(item.id === id && item.quantity < MAX_ITEMS){ 
-                return {
-                    ...item,
-                    quantity: item.quantity + 1
-                }
-            }
-            return item
-        })
-        setCart(updateCart)
-
-    }
-
-    function decreaseQuantity(id){
-        const updateCart2 = cart.map( item => {
-            if(item.id === id && item.quantity > MIN_ITEMS) { 
-                return {
-                    ...item,
-                    quantity: item.quantity - 1
-                }
-            }
-            return item
-        })
-        setCart(updateCart2)
-    }
-
-    function clearCart(e){
-        setCart([])
-    }
-
+    // forma para llamar directamente los objetos que retorna el hook personalizado
+    const {data, cart, 
+        addToCart, removeFromCart, increaseQuantity, 
+        decreaseQuantity, clearCart, isEmpty,cartTotal} = useCart();
 
     return (
     <>
@@ -91,6 +23,8 @@ function App() {
             increaseQuantity={increaseQuantity}
             decreaseQuantity={decreaseQuantity}
             clearCart       ={clearCart}
+            isEmpty         ={isEmpty}
+            cartTotal       ={cartTotal}
         />
         
         <main className="container-xl mt-5">
@@ -102,7 +36,6 @@ function App() {
                     // siempre se debe agregar el prop key cuando se itera un objeto
                         key={guitar.id}
                         guitar={guitar}
-                        setCart={setCart}
                         addToCart={addToCart}
                     />                       
                 ))}
